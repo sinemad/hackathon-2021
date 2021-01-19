@@ -63,7 +63,7 @@ class Policy(NAE):
             self.set_alert_level(AlertLevel.CRITICAL)
         self.logger.debug("### Critical Callback executed")
 
-    def action_port_up(self, event):                                                # THESE ARE PLACEHOLDERS and WILL BE CHANGED
+    def action_port_up(self, event):                                        # THESE ARE PLACEHOLDERS and WILL BE CHANGED
         self.logger.info("Current alert level: " + str(self.get_alert_level()))
         if self.get_alert_level() is not None:
             ActionSyslog(

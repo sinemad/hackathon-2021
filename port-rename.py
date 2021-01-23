@@ -37,23 +37,23 @@ class Policy(NAE):
     def __init__(self):
 
 # Setup the Monitor to trigger when a port authentication happens
-        uri1 = '/system/interfaces/{}/port_access_clients'  # The attribute we want to monitor, in this case it is port_access_clients
+        uri1 = '/system/interfaces/*/port_access_clients'  # The attribute we want to monitor, in this case it is port_access_clients
         self.m1 = Monitor(              # Declare our monitor
             uri1,                       # URI of the attribute we are monitoring
             'Port access Client Name',  # Name of the monitor
             [self.params['port_id']])   # Currently we are just looking at one defined interface from ParameterDefinitions above
                                         # TODO: We need to monitor all interfaces, will do that after we have one interface working
-        self.r1 = Rule('Port disabled administratively')                    # TODO: Once we know the possible values of the attribure then we will need to build rules
+        self.r1 = Rule('Port Authentication occured')                    # TODO: Once we know the possible values of the attribure then we will need to build rules
                                                                             #       for all the possible conditions
-        self.r1.condition('transition {} from "up" to "down"', [self.m1])   # TODO: Build condition based upon possible values
-        self.r1.action(self.action_port_down)                               # TODO: Modify to function that will handle this condition
+        self.r1.condition('transition {} to "authenticated"', [self.m1])    # We only care about the transition to "authenticated"
+        self.r1.action(self.action_port_auth)                               # TODO: Modify to function that will handle this condition
 
-#Reset policy status when port is up
-        self.r2 = Rule('Port enabled administratively')
-        self.r2.condition('transition {} from "down" to "up"', [self.m1])   # TODO: Build condition based upon possible values
-        self.r2.action(self.action_port_up)                                 # TODO: Modify to function that will handle this condition
+# Reset policy status when port is up
+#       self.r2 = Rule('Port enabled administratively')
+#       self.r2.condition('transition {} from "down" to "up"', [self.m1])   # TODO: Build condition based upon possible values
+#       self.r2.action(self.action_port_up)                                 # TODO: Modify to function that will handle this condition
 
-    def action_port_down(self, event):                                      # THESE ARE PLACEHOLDERS and WILL BE CHANGED       
+    def action_port_auth(self, event):                                      # THESE ARE PLACEHOLDERS and WILL BE CHANGED       
         ActionSyslog(
             'Port {} is disabled administratively',
             [self.params['port_id']])
@@ -62,14 +62,3 @@ class Policy(NAE):
         if self.get_alert_level() != AlertLevel.CRITICAL:
             self.set_alert_level(AlertLevel.CRITICAL)
         self.logger.debug("### Critical Callback executed")
-
-    def action_port_up(self, event):                                        # THESE ARE PLACEHOLDERS and WILL BE CHANGED
-        self.logger.info("Current alert level: " + str(self.get_alert_level()))
-        if self.get_alert_level() is not None:
-            ActionSyslog(
-                'Port {} is enabled administratively',
-                [self.params['port_id']])
-            self.remove_alert_level()
-            self.logger.debug('Unset the previous status')
-
-        self.logger.debug('### Normal Callback executed')

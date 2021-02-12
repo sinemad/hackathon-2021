@@ -19,7 +19,7 @@ Manifest = {
     'Name': 'port_rename',
     'Description': 'Port Rename Agent',
     'Version': '0.1',
-    'Author': 'Aruba123'
+    'Author': 'Aruba123' 
 }
 
 # The Parameters defined by the administrator. We should probably allow the admin to specify individual interfaces or all interfaces
@@ -37,13 +37,12 @@ class Policy(NAE):
     def __init__(self):
 
 # Setup the Monitor to trigger when a port authentication happens
-        uri1 = '/system/interfaces/*/port_access_clients'  # The attribute we want to monitor, in this case it is port_access_clients
+        uri1 = '/system/interfaces/*/port_access_clients?attributes=client_state'  # The attribute we want to monitor, in this case it is port_access_clients
         self.m1 = Monitor(              # Declare our monitor
             uri1,                       # URI of the attribute we are monitoring
-            'Port access Client Name',  # Name of the monitor
-            [self.params['port_id']])   # Currently we are just looking at one defined interface from ParameterDefinitions above
-                                        # TODO: We need to monitor all interfaces, will do that after we have one interface working
-        self.r1 = Rule('Port Authentication occured')                    # TODO: Once we know the possible values of the attribure then we will need to build rules
+            'Port access Client Name')  # Name of monitor
+
+        self.r1 = Rule('Port Authentication occured')                       # TODO: Once we know the possible values of the attribure then we will need to build rules
                                                                             #       for all the possible conditions
         self.r1.condition('transition {} to "authenticated"', [self.m1])    # We only care about the transition to "authenticated"
         self.r1.action(self.action_port_auth)                               # TODO: Modify to function that will handle this condition

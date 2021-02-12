@@ -37,7 +37,7 @@ class Policy(NAE):
     def __init__(self):
 
 # Setup the Monitor to trigger when a port authentication happens
-        uri1 = '/system/interfaces/*/port_access_clients?attributes=client_state'  # The attribute we want to monitor, in this case it is port_access_clients
+        uri1 = '/system/interfaces/*/port_access_clients'  # The attribute we want to monitor, in this case it is port_access_clients
         self.m1 = Monitor(              # Declare our monitor
             uri1,                       # URI of the attribute we are monitoring
             'Port access Client Name')  # Name of monitor

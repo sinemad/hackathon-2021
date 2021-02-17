@@ -14,7 +14,7 @@
 #KIND, either express or implied. See the License for the
 #specific language governing permissions and limitations
 #under the License.
-from requests import get
+from requests import get, exceptions
 
 Manifest = {
     'Name': 'port_rename',
@@ -43,8 +43,7 @@ def rest_get(url):
     done
     :return: Result of the HTTP GET operation.
     """
-    return get(HTTP_ADDRESS + url, verify=False,
-               proxies={'http': None, 'https': None})
+    return get(HTTP_ADDRESS + url, verify=False, proxies={'http': None, 'https': None})
 
 
 
@@ -85,8 +84,8 @@ class Agent(NAE):
             ActionSyslog('Interface ' + interface_id + ' Link gone down')
             ActionCLI("show lldp configuration " + interface_id)
             ActionCLI("show interface " + interface_id + " extended")
-            if self.get_alert_level() != AlertLevel.CRITICAL:
-                self.set_alert_level(AlertLevel.CRITICAL)
+            if self.get_alert_level() != AlertLevel.MINOR:
+                self.set_alert_level(AlertLevel.MINOR)
         self.logger.debug('links_down after: ['
                           + links_down + ']')
         self.logger.debug("================ /Down ================")
@@ -94,11 +93,24 @@ class Agent(NAE):
     def action_interface_up(self, event):
         self.logger.debug("================ Up ================")
         label = event['labels']
-        interface_id = label.split(',')[0].split('=')
+        _, interface_id = label.split(',')[0].split('=')
         self.logger.debug('interface_id - ' + interface_id)
-        port_access_uri = '/rest/v1/system/ports/' +  interface_id + '/port_access_clients?attributes=auth_attributes&depth=2'
-        r = rest_get(port_access_uri)
-        r.raise_for_status()
-        username = r.json()["username"]
-        ActionSyslog('User ' + username + ' logged in on port ' + interface_id)
+        #ActionSyslog('Interface ' + interface_id + ' is up')
+        #port_access_uri = '/rest/v1/system/ports/' +  interface_id + '/port_access_clients?attributes=auth_attributes'
+        #ActionSyslog(port_access_uri)
+        try: 
+            self.logger.debug('/rest/v1/system/ports/%s/port_access_clients' % str(interface_id))
+            r = rest_get('/rest/v1/system/ports/%s/port_access_clients?attributes=auth_attributes&depth=2' % str(interface_id))
+            r.raise_for_status()
+            ActionSyslog(r)
+            username = r.json()["username"]
+            ActionSyslog('User ' + username + ' logged in on port ' + interface_id)
+        except Exception as e:
+            ActionSyslog(str(e))
+            self.logger.error(
+                "Agent {} could not create an email alert notification , "
+                "error : {}".format(agent, str(e)))
+
+        if self.get_alert_level() is not None:
+                    self.remove_alert_level()
         self.logger.debug("================ /Up ================")

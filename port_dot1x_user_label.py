@@ -31,7 +31,7 @@ CREDITS:        Aruba Networks github NAE ASE scripts (https://github.com/aruba/
                         changed significantly)
                 2. vsx_health_monitor.py (rest_get() function)
                     -   Used the rest_get() functions to make the REST query we needed
-                3. configuration_change_email.1.1.py ()
+                3. configuration_change_email.1.1.py
                     -   Used as example on how to process and handle return from rest_get()
                         function
 VERSION:        1.0
@@ -151,6 +151,9 @@ class Agent(NAE):
         # Execute this command to reset the description 
         ActionCLI('config\ninterface ' + interface_id + '\nno description \nexit\nexit')
         self.logger.debug('COMMAND EXECUTED: config interface ' + interface_id + ' no description exit exit')
+        # Execute this command so the admin can firm the description label was reset
+        ActionCLI('show interface ' + interface_id)
+        self.logger.debug('COMMAND EXECUTED: show interface ' + interface_id)
         # Set the ALERT level to Minor so that the admin know something was triggered
         if self.get_alert_level() != AlertLevel.MINOR:
             self.set_alert_level(AlertLevel.MINOR)
@@ -215,6 +218,9 @@ class Agent(NAE):
                 # Execute this command to update the interface description with the username
                 ActionCLI("config\ninterface " + interface_id  + "\ndescription authenticated user - " + username + "\nexit\nexit")
                 self.logger.debug("COMMAND EXECUTED: config interface " + interface_id  + " description logged in user - " + username + " exit exit")
+                # Execute this command so the admin can firm the description label was updated with the username
+                ActionCLI('show interface ' + interface_id)
+                self.logger.debug('COMMAND EXECUTED: show interface ' + interface_id)
         except Exception as e: 
             # Throw and exception if the GET returns an error or any other HTTP status than 200
             self.logger.debug("Error while making REST call to URI " 

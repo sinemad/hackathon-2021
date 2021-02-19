@@ -57,20 +57,13 @@ class Agent(NAE):
         self.r2.condition('transition {} from "down" to "up"', [self.m1])
         self.r2.action(self.action_interface_up)
 
-        # variables
-        #self.variables['links_down'] = ''
 
     def action_interface_down(self, event):
         self.logger.debug("================ Down ================")
         label = event['labels']
         self.logger.debug('label: [' + label + ']')
         _, interface_id = label.split(',')[0].split('=')
-        #links_down = self.variables['links_down']
-        #self.logger.debug('links_down before: ['
-        #                  + links_down + ']')
-        #if (interface_id + ':') not in links_down:
-        #    links_down = links_down + interface_id + ':'
-        #    self.variables['links_down'] = links_down
+       
         ActionSyslog('Interface ' + interface_id + ' is down')
         self.logger.debug('Interface ' + interface_id + ' is down')
 
@@ -82,8 +75,6 @@ class Agent(NAE):
 
         if self.get_alert_level() != AlertLevel.MINOR:
             self.set_alert_level(AlertLevel.MINOR)
-        #self.logger.debug('links_down after: ['
-        #                 + links_down + ']')
         self.logger.debug("================ /Down ================")
 
     def action_interface_up(self, event):

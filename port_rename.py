@@ -22,18 +22,8 @@ Manifest = {
     'Description': 'Rename port based on authenticated user',
     'Version': '1.0',
     'TargetSoftwareVersion': '10.04',
-    'Author': 'Aruba123'
+    'Author': 'Team Aruba123'
 }
-
-# The Parameters defined by the administrator. We should probably allow the admin to specify individual interfaces or all interfaces
-#ParameterDefinitions = {
-#    'port_id': {
-#        'Name': 'Port Id',
-#        'Description': 'Port to be renamed',
-#        'Type': 'string',
-#        'Default': '1/1/1'                      # TODO: We need to allow the admin to either select individual interfaces or all interfaces
-#    }                                           #       for testing right now we will do a single interface to make troubleshooting easier.
-#}
 
 # cribbed this from the github NAE ase script - vsx_health_monitor.py
 def rest_get(url):
@@ -51,8 +41,8 @@ def rest_get(url):
 class Agent(NAE):
 
     def __init__(self):
-    # I'm going to bring over the interface_link_state_monitor script and modify. Having to do some tricky stuff because we can only use v1 REST interface with NAE scripts :(
-         # Interface status
+        # I'm going to bring over the interface_link_state_monitor script and modify. Having to do some tricky stuff because we can only use v1 REST interface with NAE scripts :(
+        # Interface status
         uri1 = '/rest/v1/system/interfaces/*?attributes=link_state' + \
             '&filter=type:system'
         self.m1 = Monitor(
@@ -68,34 +58,40 @@ class Agent(NAE):
         self.r2.action(self.action_interface_up)
 
         # variables
-        self.variables['links_down'] = ''
+        #self.variables['links_down'] = ''
 
     def action_interface_down(self, event):
         self.logger.debug("================ Down ================")
         label = event['labels']
         self.logger.debug('label: [' + label + ']')
         _, interface_id = label.split(',')[0].split('=')
-        self.logger.debug('interface_id - ' + interface_id)
-        links_down = self.variables['links_down']
-        self.logger.debug('links_down before: ['
-                          + links_down + ']')
-        if (interface_id + ':') not in links_down:
-            links_down = links_down + interface_id + ':'
-            self.variables['links_down'] = links_down
-            ActionSyslog('Interface ' + interface_id + ' Link gone down')
-            ActionCLI("show interface " + interface_id + " extended")
-            ActionCLI("config\ninterface " + interface_id + "\ndescription user logged out\nexit\nexit")
-            if self.get_alert_level() != AlertLevel.MINOR:
-                self.set_alert_level(AlertLevel.MINOR)
-        self.logger.debug('links_down after: ['
-                          + links_down + ']')
+        #links_down = self.variables['links_down']
+        #self.logger.debug('links_down before: ['
+        #                  + links_down + ']')
+        #if (interface_id + ':') not in links_down:
+        #    links_down = links_down + interface_id + ':'
+        #    self.variables['links_down'] = links_down
+        ActionSyslog('Interface ' + interface_id + ' is down')
+        self.logger.debug('Interface ' + interface_id + ' is down')
+
+        ActionCLI('show interface ' + interface_id)
+        self.logger.debug('COMMAND EXECUTED: show interface ' + interface_id)
+
+        ActionCLI('config\ninterface ' + interface_id + '\nno description \nexit\nexit')
+        self.logger.debug('COMMAND EXECUTED: config interface ' + interface_id + ' no description exit exit')
+
+        if self.get_alert_level() != AlertLevel.MINOR:
+            self.set_alert_level(AlertLevel.MINOR)
+        #self.logger.debug('links_down after: ['
+        #                 + links_down + ']')
         self.logger.debug("================ /Down ================")
 
     def action_interface_up(self, event):
         self.logger.debug("================ Up ================")
         label = event['labels']
         _, interface_id = label.split(',')[0].split('=')
-        self.logger.debug('1. UP  - interface_id - ' + interface_id)
+        self.logger.debug('Interface ' + interface_id + ' is up')
+        ActionSyslog('Interface ' + interface_id + ' is up')
         uri_encoded_interface_id = interface_id.replace('/', '%2F') #"1%2F1%2F1"
         rest_uri = '/rest/v1/system/ports/' + uri_encoded_interface_id + '/port_access_clients?attributes=auth_attributes&depth=2'
         try: 
@@ -106,14 +102,22 @@ class Agent(NAE):
                 self.logger.debug("Check the GET status: {}".format(r.raise_for_status()))
                 r.raise_for_status()
             json_results = r.json()
-            username = json_results[-1]['auth_attributes']['dot1x']['username']
-            self.logger.debug('USERNAME: ' + str(username))
-            ActionSyslog('User ' + username + ' logged in on port ' + interface_id)
-            ActionCLI("config\ninterface " + interface_id  + "\ndescription logged in user - " + username + "\nexit\nexit")    
+            auth_method = json_results[-1]['auth_attributes']
+            if 'dot1x' in auth_method:
+                #self.logger.debug('AUTH_METHOD: ' + str(auth_method))
+                username = json_results[-1]['auth_attributes']['dot1x']['username']
+                self.logger.debug('USERNAME: ' + str(username))
+                ActionSyslog('User ' + username + ' logged in on port ' + interface_id)
+                self.logger.debug('User ' + username + ' logged in on port ' + interface_id)
+
+                ActionCLI('show interface ' + interface_id)
+                self.logger.debug('COMMAND EXECUTED: show interface ' + interface_id)
+
+                ActionCLI("config\ninterface " + interface_id  + "\ndescription logged in user - " + username + "\nexit\nexit")
+                self.logger.debug("COMMAND EXECUTED: config interface " + interface_id  + " description logged in user - " + username + " exit exit")
         except Exception as e:
             self.logger.debug("Error while making REST call to URI " 
-                              "{} : {}".format(rest_uri, e))
-            
+                              "{} : {}".format(rest_uri, e)) 
         if self.get_alert_level() is not None:
-                    self.remove_alert_level()
+            self.remove_alert_level()
         self.logger.debug("================ /Up ================")

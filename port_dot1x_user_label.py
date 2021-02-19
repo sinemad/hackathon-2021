@@ -20,6 +20,7 @@ from requests import get
 """
 NAME:           port_dot1x_user_label.py
 AUTHORS:        Team Aruba123 (Jeremy Bradrick, Dan Gullick, Greg Kamer, Dan Sinema)
+                File location: https://github.com/sinemad/hackathon-2021
 CREDITS:        Aruba Networks github NAE ASE scripts (https://github.com/aruba/nae-scripts/blob/master/common/ase/)
                 were used as example and code was derived from the following scripts: 
                 1. interface_link_state_monitor.1.0.py
